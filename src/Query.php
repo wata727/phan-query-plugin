@@ -2,72 +2,88 @@
 
 namespace PhanQueryPlugin;
 
+use Phan\CodeBase;
+use Phan\Language\Context;
+use Phan\AST\ContextNode;
 use \ast\Node;
 
 class Query
 {
     const CONFIG_FILE = '.phan/query.php';
 
-    private $node;
+    public $node;
 
     public static function load(string $config = self::CONFIG_FILE): Query
     {
         foreach (require($config) as $pattern) {
-            $root = \ast\parse_code(self::prepare($pattern['pattern']), 40); // TODO: get AST_VERSION from Phan
+            $query = new Query($pattern['pattern'], $pattern['type'], $pattern['message']);
         }
 
-        // Drop T_OPEN_TAG
-        return new Query($root->children[0]);
+        return $query;
     }
 
-    public static function prepare(string $pattern): string
+    public function __construct(string $pattern, string $issueType, string $message)
     {
-        // TODO: replace meta charactor
+        $root = \ast\parse_code($this->prepare($pattern), \Phan\Config::AST_VERSION);
+
+        // Drop T_OPEN_TAG
+        $this->node = $root->children[0];
+        $this->issueType = $issueType;
+        $this->message = $message;
+    }
+
+    public function prepare(string $pattern): string
+    {
+        // @see https://secure.php.net/manual/en/language.oop5.basic.php
+        $pattern = preg_replace_callback(
+            "/<([a-zA-Z_\x7f-\xff\\\\][a-zA-Z0-9_\x7f-\xff\\\\]*)>/",
+            function ($matches) {
+                $klass = preg_replace("/\\\\/", "PRQ_NS", $matches[1]);
+                return '$_PRQ_ANY_INSTANCE_OF_' . $klass;
+            },
+            $pattern
+        );
         return "<?php " . $pattern;
     }
 
-    public function __construct(Node $node)
+    public function match(CodeBase $code_base, Context $context, $target, $query): Bool
     {
-        $this->node = $node;
-        // TODO: Accept issueType and message
-        $this->issueType = "PhanQueryFound";
-        $this->message = "Query matched";
-    }
-
-    public function match(Node $node): Bool
-    {
-        return $this->isEqualsWithoutLineno($this->node, $node);
-    }
-
-    /**
-    * Verify that it is the same except for line number of Node.
-    *
-    * @param mixed $a Object to compare.
-    * @param mixed $b Object to compare.
-    * @return boolean Result.
-    */
-    private function isEqualsWithoutLineno($a, $b): Bool
-    {
-        if (is_array($a)) {
-            if (!is_array($b)) {
+        if (is_array($target)) {
+            if (!is_array($query)) {
                 return false;
             }
-            foreach ($a as $key => $value) {
-                if (!(array_key_exists($key, $b) && $this->isEqualsWithoutLineno($value, $b[$key]))) {
+            foreach ($target as $key => $value) {
+                if (!(array_key_exists($key, $query) && $this->match($code_base, $context, $value, $query[$key]))) {
                     return false;
                 }
             }
-        } elseif ($a instanceof Node) {
-            if (!$b instanceof Node) {
+        } elseif ($target instanceof Node) {
+            if (!$query instanceof Node) {
                 return false;
             }
-            if ($a->kind !== $b->kind || $a->flags !== $b->flags) {
-                return false;
-            }
-            return $this->isEqualsWithoutLineno($a->children, $b->children);
-        } elseif ($a !== $b) {
+            return $this->matchNode($code_base, $context, $target, $query);
+        } elseif ($target !== $query) {
             return false;
         }
         return true;
+    }
+
+    private function matchNode(CodeBase $code_base, Context $context, Node $target, Node $query): Bool
+    {
+        if ($target->kind === \ast\AST_VAR && $query->kind === \ast\AST_VAR) {
+            $ctx_node = new ContextNode($code_base, $context, $target);
+            $types = array_map(function($type) {
+                return $type->__toString();
+            }, $ctx_node->getVariable()->getUnionType()->getTypeSet());
+
+            if (preg_match('/_PRQ_ANY_INSTANCE_OF_(.*)/', $query->children['name'], $matches) === 1) {
+                $klass = preg_replace("/PRQ_NS/", "\\", $matches[1]);
+                return in_array($klass, $types, true);
+            }
+        }
+        if ($target->kind !== $query->kind || $target->flags !== $query->flags) {
+            return false;
+        }
+        return $this->match($code_base, $context, $target->children, $query->children);
     }
 }
