@@ -1,0 +1,28 @@
+{
+    "name": "wata727/phan-query-plugin",
+    "description": "A Phan plugin to add new rule without writing plugin",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kazuma Watanabe"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "PhanQueryPlugin\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "phpcs": "phpcs",
+        "phan": "phan"
+    },
+    "require": {
+        "phan/phan": ">=0.8.5"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.1",
+        "squizlabs/php_codesniffer": "^3.2"
+    }
+}
