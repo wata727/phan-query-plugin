@@ -150,21 +150,22 @@ class Query // phpcs:ignore PSR1.Classes.ClassDeclaration
     */
     private function matchNode(CodeBase $code_base, Context $context, Node $target, Node $query): Bool
     {
-        // If target node is variable, resolving types of the variable.
-        if ($target->kind === \ast\AST_VAR && $query->kind === \ast\AST_VAR) {
-            $ctx_node = new ContextNode($code_base, $context, $target);
-            $types = array_map(function ($type) {
-                return $type->__toString();
-            }, $ctx_node->getVariable()->getUnionType()->getTypeSet());
-
+        // If query node is variable, resolving meta characters
+        if ($query->kind === \ast\AST_VAR) {
             // If the query has AnyInstanceOfClass meta character, checking whether match with type.
             if (preg_match('/'.self::T_ANY_INSTANCE_OF.'(.*)/', $query->children['name'], $matches) === 1) {
                 $klass = $matches[1];
 
                 if ($klass === "any") {
-                    // `<any>` is matched with any instance
+                    // `<any>` is matched with any node
                     return true;
-                } else {
+                } elseif ($target->kind === \ast\AST_VAR) {
+                    // If target node is variable, resolving types of the variable
+                    $ctx_node = new ContextNode($code_base, $context, $target);
+                    $types = array_map(function ($type) {
+                        return $type->__toString();
+                    }, $ctx_node->getVariable()->getUnionType()->getTypeSet());
+
                     $klass = str_replace(self::T_NS, "\\", $klass);
                     // It also supports omitting the root namespace.
                     return in_array($klass, $types, true) || in_array("\\".$klass, $types, true);
