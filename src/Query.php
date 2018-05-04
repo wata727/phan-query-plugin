@@ -152,7 +152,8 @@ class Query
             // If the query has AnyInstanceOfClass meta character, checking whether match with type.
             if (preg_match('/'.self::T_ANY_INSTANCE_OF.'(.*)/', $query->children['name'], $matches) === 1) {
                 $klass = preg_replace("/".self::T_NS."/", "\\", $matches[1]);
-                return in_array($klass, $types, true);
+                // It also supports omitting the root namespace.
+                return in_array($klass, $types, true) || in_array("\\".$klass, $types, true);
             }
         }
         if ($target->kind !== $query->kind || $target->flags !== $query->flags) {

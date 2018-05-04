@@ -17,6 +17,7 @@ class IntegrationTest extends TestCase
 
             $this->assertContains("cat.php:19 MatchingNode Matching Node Message", $output);
             $this->assertContains("cat.php:19 MatchingInstanceReceiver Matching Instance Receiver Message", $output);
+            $this->assertContains("cat.php:19 MatchingInstanceReceiverWithoutRootNamespace Matching Instance Receiver Without Root Namespace Message", $output);
             $this->assertContains("cat.php:21 MatchingInstanceArugument Matching Instance Arugument Message", $output);
         } finally {
             chdir($work_dir);
