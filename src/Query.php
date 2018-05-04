@@ -151,9 +151,16 @@ class Query
 
             // If the query has AnyInstanceOfClass meta character, checking whether match with type.
             if (preg_match('/'.self::T_ANY_INSTANCE_OF.'(.*)/', $query->children['name'], $matches) === 1) {
-                $klass = str_replace(self::T_NS, "\\", $matches[1]);
-                // It also supports omitting the root namespace.
-                return in_array($klass, $types, true) || in_array("\\".$klass, $types, true);
+                $klass = $matches[1];
+
+                if ($klass === "any") {
+                    // `<any>` is matched with any instance
+                    return true;
+                } else {
+                    $klass = str_replace(self::T_NS, "\\", $klass);
+                    // It also supports omitting the root namespace.
+                    return in_array($klass, $types, true) || in_array("\\".$klass, $types, true);
+                }
             }
         }
         if ($target->kind !== $query->kind || $target->flags !== $query->flags) {

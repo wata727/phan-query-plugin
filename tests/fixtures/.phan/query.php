@@ -21,4 +21,9 @@ return [
         "message" => "Matching Instance Arugument Message",
         "pattern" => '$cat->makeSound(<string>);',
     ],
+    [
+        "type" => "MatchingAnyInstanceArugument",
+        "message" => "Matching Any Instance Arugument Message",
+        "pattern" => '$cat->makeSound(<any>);',
+    ],
 ];
