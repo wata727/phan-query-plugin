@@ -7,6 +7,8 @@ use Phan\Language\Context;
 use Phan\AST\ContextNode;
 use \ast\Node;
 
+class PatternSyntaxError extends \Exception {} // phpcs:ignore
+
 /**
 * Query is a PHP-like pattern matching syntax object.
 * The pattern parsed as PHP scripts by `php-ast`. But a part of
@@ -17,7 +19,7 @@ use \ast\Node;
 *
 * The meta characters are matched a node based on its meaning.
 */
-class Query
+class Query // phpcs:ignore PSR1.Classes.ClassDeclaration
 {
     /** The location of query file */
     const CONFIG_FILE = '.phan/query.php';
@@ -58,11 +60,17 @@ class Query
     * @param string $pattern   A pattern matching syntax.
     * @param string $issueType A Phan issue type emitted when the query is matched.
     * @param string $message   A messge of the issue.
+    * @throws PatternSyntaxError When the pattern is invalid syntax.
     */
     public function __construct(string $pattern, string $issueType, string $message)
     {
-        // Using Phan AST version when parse the pattern
-        $root = \ast\parse_code($this->prepare($pattern), \Phan\Config::AST_VERSION);
+        $pattern = $this->prepare($pattern);
+        try {
+            // Using Phan AST version when parse the pattern
+            $root = \ast\parse_code($pattern, \Phan\Config::AST_VERSION);
+        } catch (\ParseError $error) {
+            throw new PatternSyntaxError("The pattern of ".$issueType." is invalid syntax. Parsed code: ".$pattern." Error message: ".$error->getMessage());
+        }
 
         // Drop T_OPEN_TAG
         $this->node = $root->children[0];
