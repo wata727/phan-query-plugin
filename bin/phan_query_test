@@ -2,8 +2,8 @@
 <?php
 
 function exec_phan($file) {
-    if (is_file("vendor/bin/phan")) {
-        $phan = "vendor/bin/phan";
+    if (is_file(__DIR__."/phan")) {
+        $phan = __DIR__."/phan";
     } else {
         // For test
         $phan = __DIR__."/../vendor/bin/phan";
