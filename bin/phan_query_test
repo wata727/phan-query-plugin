@@ -1,0 +1,53 @@
+#!/usr/bin/env php
+<?php
+
+function exec_phan($file) {
+    if (is_file("vendor/bin/phan")) {
+        $phan = "vendor/bin/phan";
+    } else {
+        // For test
+        $phan = __DIR__."/../vendor/bin/phan";
+    }
+
+    exec($phan." -k ".__DIR__."/../utils/config_for_test.php ".stream_get_meta_data($file)['uri'], $output);
+    return implode("\n", $output);
+}
+
+$queries = require(".phan/query.php");
+$success = 0;
+
+foreach ($queries as $query) {
+    $file = tmpfile();
+
+    if (isset($query['test']) && isset($query['test']['match'])) {
+        fwrite($file, $query['test']['match']);
+        $output = exec_phan($file);
+
+        if (strpos($output, $query['type']) !== false) {
+            $success++;
+        } else {
+            echo "Failed to match test in `".$query['type']."`\n";
+            echo "Output: ".$output."\n";
+            exit(1);
+        }
+    }
+
+    if (isset($query['test']) && isset($query['test']['unmatch'])) {
+        fwrite($file, $query['test']['unmatch']);
+        $output = exec_phan($file);
+
+        if (strpos($output, $query['type']) === false) {
+            $success++;
+        } else {
+            echo "Failed to unmatch test in `".$query['type']."`\n";
+            echo "Output: ".$output."\n";
+            exit(1);
+        }
+    }
+}
+
+if ($success === 0) {
+    echo "No tests are found\n";
+} else {
+    echo "All ".$success." tests are passed!\n";
+}
