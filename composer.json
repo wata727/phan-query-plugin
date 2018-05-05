@@ -1,6 +1,6 @@
 {
     "name": "wata727/phan-query-plugin",
-    "description": "A Phan plugin to add new rule without writing plugins",
+    "description": "A Phan plugin to add a new rule without writing plugins",
     "type": "project",
     "license": "MIT",
     "authors": [
