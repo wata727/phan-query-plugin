@@ -4,7 +4,15 @@ before_script:
   - phpenv config-rm xdebug.ini
   - pecl install ast
   - composer install
+
+matrix:
+  include:
+  - env: PHAN_VERSION=0.12.5
+  - env: PHAN_VERSION=0.11.3
+  - env: PHAN_VERSION=0.10.5
+  - env: PHAN_VERSION=0.8.13
 script:
-  - composer pahout
-  - composer phan
-  - composer test
+  - "composer remove phan/phan"
+  - "composer require phan/phan:$PHAN_VERSION"
+  - "vendor/bin/phan -v"
+  - "composer test"
