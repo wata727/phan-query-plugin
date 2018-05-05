@@ -1,6 +1,7 @@
 # Phan Query Plugin
 
 [![Build Status](https://travis-ci.org/wata727/phan-query-plugin.svg?branch=master)](https://travis-ci.org/wata727/phan-query-plugin)
+[![Latest Stable Version](https://poser.pugx.org/wata727/phan-query-plugin/v/stable)](https://packagist.org/packages/wata727/phan-query-plugin)
 [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 
 A Phan plugin to add a new rule without writing plugins. This plugin inspired by [Querly](https://github.com/soutaro/querly).
